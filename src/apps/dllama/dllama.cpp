@@ -7,6 +7,10 @@
 #include <sstream>
 #include <string>
 
+#if DLLAMA_USE_NUMA
+#include <numa.h>
+#endif
+
 #include "../../utils.hpp"
 #include "../../socket.hpp"
 #include "../../transformer.hpp"
@@ -226,6 +230,14 @@ int main(int argc, char *argv[]) {
 
     AppArgs args = AppArgs::parse(argc, argv, true);
     bool success = false;
+
+    if (args.numa >= 0) {
+#if DLLAMA_USE_NUMA
+        numa_run_on_node(args.numa);
+#else
+        fprintf(stderr, "Application was compiled without DLLAMA_USE_NUMA option, ignoring NUMA settings!\n");
+#endif
+    }
 
     if (args.mode != NULL) {
         if (strcmp(args.mode, "inference") == 0) {

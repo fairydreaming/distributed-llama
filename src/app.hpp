@@ -18,6 +18,7 @@ public:
     char* mode;
     int nThreads;
     bool useDiscForKvCache;
+    int numa;
 
     // inference
     char* modelPath;

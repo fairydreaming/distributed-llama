@@ -43,6 +43,7 @@ AppArgs AppArgs::parse(int argc, char** argv, bool hasMode) {
     args.chatTemplateType = TEMPLATE_UNKNOWN;
     args.maxSeqLen = 0;
     args.useDiscForKvCache = false;
+    args.numa = -1;
 
     int i = 1;
     if (hasMode && argc > 1) {
@@ -104,6 +105,8 @@ AppArgs AppArgs::parse(int argc, char** argv, bool hasMode) {
             args.maxSeqLen = (unsigned int)atoi(value);
         } else if (strcmp(name, "--kv-cache-storage") == 0) {
             args.useDiscForKvCache = strcmp(value, "disc") == 0;
+        } else if (strcmp(name, "--numa") == 0) {
+            args.numa = atoi(value);
         } else {
             printf("Unknown option %s\n", name);
             exit(EXIT_FAILURE);

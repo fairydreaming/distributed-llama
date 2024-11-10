@@ -8,6 +8,11 @@ else
     LIBS = -lpthread
 endif
 
+ifdef DLLAMA_USE_NUMA
+	LIBS += -lnuma
+	CXXFLAGS += -DDLLAMA_USE_NUMA=1
+endif
+
 utils: src/utils.cpp
 	$(CXX) $(CXXFLAGS) -c src/utils.cpp -o utils.o
 quants: src/quants.cpp
