@@ -49,6 +49,9 @@ typedef void (TaskLoopHandler)(unsigned int nThreads, unsigned int threadIndex, 
 typedef struct {
     TaskLoopHandler* handler;
     unsigned int taskType;
+    const char* taskName;
+    unsigned long executionCount;
+    unsigned long executionTime;
 } TaskLoopTask;
 
 class TaskLoop;
@@ -69,8 +72,8 @@ public:
     void* userData;
     std::atomic_uint currentTaskIndex;
     std::atomic_uint doneThreadCount;
-    unsigned int lastTime;
-    unsigned int* executionTime;
+    unsigned long lastTime;
+    unsigned long* executionTime;
     TaskLoopThread* threads;
 
     TaskLoop(unsigned int nThreads, unsigned int nTasks, unsigned int nTypes, TaskLoopTask* tasks, void* userData);

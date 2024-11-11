@@ -18,7 +18,7 @@ TransformerArch::~TransformerArch() {
     }
 }
 
-void addTask(TaskLoopHandler* handler, unsigned int taskType, TransformerTasks* tasks) {
+void addTask(TaskLoopHandler* handler, const char* taskName, unsigned int taskType, TransformerTasks* tasks) {
     const int alloc = 32;
     if (tasks->nTasks % alloc == 0) {
         TaskLoopTask* newTasks = new TaskLoopTask[tasks->nTasks + alloc];
@@ -30,15 +30,18 @@ void addTask(TaskLoopHandler* handler, unsigned int taskType, TransformerTasks* 
     }
     tasks->tasks[tasks->nTasks].handler = handler;
     tasks->tasks[tasks->nTasks].taskType = taskType;
+    tasks->tasks[tasks->nTasks].executionCount = 0;
+    tasks->tasks[tasks->nTasks].executionTime = 0;
+    tasks->tasks[tasks->nTasks].taskName = taskName;
     tasks->nTasks++;
 }
 
-void TransformerArch::I(TaskLoopHandler* handler, unsigned int taskType) {
-    addTask(handler, taskType, &inference);
+void TransformerArch::I(TaskLoopHandler* handler, const char* taskName, unsigned int taskType) {
+    addTask(handler, taskName, taskType, &inference);
 }
 
-void TransformerArch::W(TaskLoopHandler* handler, unsigned int taskType) {
-    addTask(handler, taskType, &worker);
+void TransformerArch::W(TaskLoopHandler* handler, const char* taskName, unsigned int taskType) {
+    addTask(handler, taskName, taskType, &worker);
 }
 
 void syncUnitBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <exception>
 #include <vector>
+#include <map>
 #include <sys/time.h>
 #include "utils.hpp"
 
@@ -71,9 +72,15 @@ void freeMmapFileBuffer(void* addr) {
 }
 
 unsigned long timeMs() {
-    struct timeval te; 
+    struct timeval te;
     gettimeofday(&te, NULL);
     return te.tv_sec * 1000LL + te.tv_usec / 1000;
+}
+
+unsigned long timeUs() {
+    struct timeval te;
+    gettimeofday(&te, NULL);
+    return te.tv_sec * 1000000LL + te.tv_usec;
 }
 
 unsigned int randomU32(unsigned long long *state) {
@@ -155,7 +162,7 @@ TaskLoop::TaskLoop(unsigned int nThreads, unsigned int nTasks, unsigned int nTyp
     this->nTypes = nTypes;
     this->tasks = tasks;
     this->userData = userData;
-    executionTime = new unsigned int[nTypes];
+    executionTime = new unsigned long[nTypes];
 
     threads = new TaskLoopThread[nThreads];
     for (unsigned int i = 0; i < nThreads; i++) {
@@ -166,6 +173,19 @@ TaskLoop::TaskLoop(unsigned int nThreads, unsigned int nTasks, unsigned int nTyp
 }
 
 TaskLoop::~TaskLoop() {
+    std::map<const char*, std::pair<long, long> > executionProfile;
+    for (unsigned int i = 0; i < this->nTasks; i++) {
+        auto it = executionProfile.find(this->tasks[i].taskName);
+        if (it != executionProfile.end()) {
+            it->second.first += this->tasks[i].executionCount;
+            it->second.second += this->tasks[i].executionTime;
+        } else {
+            executionProfile.insert(std::make_pair(this->tasks[i].taskName, std::make_pair(this->tasks[i].executionCount, this->tasks[i].executionTime)));
+        }
+    }
+    for (const auto& it : executionProfile) {
+        printf("%s,%ld,%ld\n", it.first, it.second.first, it.second.second);
+    }
     delete[] executionTime;
     delete[] threads;
 }
@@ -175,7 +195,7 @@ void TaskLoop::run() {
     doneThreadCount.exchange(0);
 
     unsigned int i;
-    lastTime = timeMs();
+    lastTime = timeUs();
     for (i = 0; i < nTypes; i++) {
         executionTime[i] = 0;
     }
@@ -206,19 +226,23 @@ void* TaskLoop::threadHandler(void* arg) {
             break;
         }
 
-        const TaskLoopTask* task = &loop->tasks[currentTaskIndex % loop->nTasks];
+        TaskLoopTask* task = &loop->tasks[currentTaskIndex % loop->nTasks];
 
         task->handler(loop->nThreads, threadIndex, loop->userData);
 
         int currentCount = loop->doneThreadCount.fetch_add(1);
 
         if (currentCount == loop->nThreads - 1) {
-            unsigned int currentTime = timeMs();
-            loop->executionTime[task->taskType] += currentTime - loop->lastTime;
+            unsigned long currentTime = timeUs();
+            unsigned long lastTime = loop->lastTime;
+            loop->executionTime[task->taskType] += currentTime - lastTime;
             loop->lastTime = currentTime;
 
             loop->doneThreadCount.store(0);
             loop->currentTaskIndex.fetch_add(1);
+
+            task->executionTime += currentTime - lastTime;
+            task->executionCount += 1;
         } else {
             while (loop->currentTaskIndex.load() == currentTaskIndex) {
                 // NOP

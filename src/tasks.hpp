@@ -5,6 +5,7 @@
 #include "utils.hpp"
 
 #define TASK_ARGS unsigned int nThreads, unsigned int threadIndex, void* userData
+#define TASK_WITH_NAME(x) x, #x
 
 #define TASK_N_TYPES 2
 #define TASK_TYPE_INFERENCE 0
@@ -32,8 +33,8 @@ public:
     TransformerArch();
     ~TransformerArch();
 
-    void I(TaskLoopHandler* handler, unsigned int taskType);
-    void W(TaskLoopHandler* handler, unsigned int taskType);
+    void I(TaskLoopHandler* handler, const char* taskName, unsigned int taskType);
+    void W(TaskLoopHandler* handler, const char* taskName, unsigned int taskType);
 };
 
 #define TASK_VARIABLES \

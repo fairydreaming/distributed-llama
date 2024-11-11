@@ -243,56 +243,56 @@ TransformerArch buildLlamaArch(TransformerSpec* spec) {
 
     // inference
 
-    a.I(sendPos, TASK_TYPE_TRANSFER);
+    a.I(sendPos, "sendPos", TASK_TYPE_TRANSFER);
     for (int i = 0; i < spec->nLayers; i++) {
-        a.I(llamaRmsAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaRmsAttNorm, TASK_TYPE_INFERENCE);
-        a.I(llamaQuantizeRmsAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaSyncRmsAtt, TASK_TYPE_TRANSFER);
-        a.I(llamaQkv, TASK_TYPE_INFERENCE);
-        a.I(llamaRope, TASK_TYPE_INFERENCE);
-        a.I(llamaMultiheadAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaQuantizeMultiheadAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaQuantizeAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaSyncAtt, TASK_TYPE_TRANSFER);
-        a.I(llamaDequantizeAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaMergeAtt, TASK_TYPE_INFERENCE);
-        a.I(llamaRmfFfn, TASK_TYPE_INFERENCE);
-        a.I(llamaRmfFfnNorm, TASK_TYPE_INFERENCE);
-        a.I(llamaQuantizeRmfFfn, TASK_TYPE_INFERENCE);
-        a.I(llamaSyncFfn, TASK_TYPE_TRANSFER);
-        a.I(llamaFfn0, TASK_TYPE_INFERENCE);
-        a.I(llamaFfn1, TASK_TYPE_INFERENCE);
-        a.I(llamaFfn2, TASK_TYPE_INFERENCE);
-        a.I(llamaQuantizeFfn2, TASK_TYPE_INFERENCE);
-        a.I(llamaSyncFfn2, TASK_TYPE_TRANSFER);
-        a.I(llamaDequantizeFfn2, TASK_TYPE_INFERENCE);
-        a.I(llamaMergeFfn2, TASK_TYPE_INFERENCE);
-        a.I(llamaNextBlock, TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaRmsAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaRmsAttNorm), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaQuantizeRmsAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaSyncRmsAtt), TASK_TYPE_TRANSFER);
+        a.I(TASK_WITH_NAME(llamaQkv), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaRope), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaMultiheadAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaQuantizeMultiheadAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaQuantizeAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaSyncAtt), TASK_TYPE_TRANSFER);
+        a.I(TASK_WITH_NAME(llamaDequantizeAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaMergeAtt), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaRmfFfn), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaRmfFfnNorm), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaQuantizeRmfFfn), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaSyncFfn), TASK_TYPE_TRANSFER);
+        a.I(TASK_WITH_NAME(llamaFfn0), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaFfn1), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaFfn2), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaQuantizeFfn2), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaSyncFfn2), TASK_TYPE_TRANSFER);
+        a.I(TASK_WITH_NAME(llamaDequantizeFfn2), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaMergeFfn2), TASK_TYPE_INFERENCE);
+        a.I(TASK_WITH_NAME(llamaNextBlock), TASK_TYPE_INFERENCE);
     }
-    a.I(llamaRmsFinal, TASK_TYPE_INFERENCE);
-    a.I(llamaRmsFinalNorm, TASK_TYPE_INFERENCE);
-    a.I(llamaFinalize, TASK_TYPE_INFERENCE);
+    a.I(TASK_WITH_NAME(llamaRmsFinal), TASK_TYPE_INFERENCE);
+    a.I(TASK_WITH_NAME(llamaRmsFinalNorm), TASK_TYPE_INFERENCE);
+    a.I(TASK_WITH_NAME(llamaFinalize), TASK_TYPE_INFERENCE);
 
     // worker
 
     for (int i = 0; i < spec->nLayers; i++) {
-        a.W(llamaSyncRmsAtt, TASK_TYPE_TRANSFER);
-        a.W(llamaQkv, TASK_TYPE_INFERENCE);
-        a.W(llamaRope, TASK_TYPE_INFERENCE);
-        a.W(llamaMultiheadAtt, TASK_TYPE_INFERENCE);
-        a.W(llamaQuantizeMultiheadAtt, TASK_TYPE_INFERENCE);
-        a.W(llamaAtt, TASK_TYPE_INFERENCE);
-        a.W(llamaQuantizeAtt, TASK_TYPE_INFERENCE);
-        a.W(llamaSyncAtt, TASK_TYPE_TRANSFER);
-        a.W(llamaSyncFfn, TASK_TYPE_TRANSFER);
-        a.W(llamaFfn0, TASK_TYPE_INFERENCE);
-        a.W(llamaFfn1, TASK_TYPE_INFERENCE);
-        a.W(llamaFfn2, TASK_TYPE_INFERENCE);
-        a.W(llamaQuantizeFfn2, TASK_TYPE_INFERENCE);
-        a.W(llamaSyncFfn2, TASK_TYPE_TRANSFER);
-        a.W(llamaNextBlock, TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaSyncRmsAtt), TASK_TYPE_TRANSFER);
+        a.W(TASK_WITH_NAME(llamaQkv), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaRope), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaMultiheadAtt), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaQuantizeMultiheadAtt), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaAtt), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaQuantizeAtt), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaSyncAtt), TASK_TYPE_TRANSFER);
+        a.W(TASK_WITH_NAME(llamaSyncFfn), TASK_TYPE_TRANSFER);
+        a.W(TASK_WITH_NAME(llamaFfn0), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaFfn1), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaFfn2), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaQuantizeFfn2), TASK_TYPE_INFERENCE);
+        a.W(TASK_WITH_NAME(llamaSyncFfn2), TASK_TYPE_TRANSFER);
+        a.W(TASK_WITH_NAME(llamaNextBlock), TASK_TYPE_INFERENCE);
     }
     return a;
 }
