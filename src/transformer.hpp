@@ -147,8 +147,8 @@ public:
     ~TransformerBlock();
 };
 
-#define TB_LENGTH 10
-#define TB_NO_PAIRS 2
+#define TB_LENGTH 11
+#define TB_NO_PAIRS 3
 
 #define TB_UNIT_XB 0
 #define TB_UNIT_XB_QUANTIZED 1
@@ -160,6 +160,7 @@ public:
 #define TB_SLICED_HB_QUANTIZED 7
 #define TB_UNIT_MOE_INDEXES 8
 #define TB_UNIT_MOE_WEIGHTS 9
+#define TB_SLICED_LOGITS 10
 
 class TransformerBuffer {
 public:
@@ -187,6 +188,7 @@ public:
     float* tokenEmbeddingTable;
     size_t rmsFinalBytes;
     float* rmsFinal;
+    RowMatmulSlice* wclsSlice;
     MatmulCommand* wclsMm;
 
     pos_t pos;

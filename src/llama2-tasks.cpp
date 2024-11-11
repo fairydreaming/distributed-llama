@@ -235,7 +235,21 @@ void llamaRmsFinalNorm(TASK_ARGS) {
 
 void llamaFinalize(TASK_ARGS) {
     TASK_VARIABLES;
-    transformer->wclsMm->forward(transformer->x, transformer->logits, nThreads, threadIndex);
+    float* lb = (float*)transformer->buffer->getSliced(TB_SLICED_LOGITS, transformer->sliceIndex);
+    transformer->wclsMm->forward(transformer->x, lb, nThreads, threadIndex);
+}
+
+void llamaSyncFinalize(TASK_ARGS) {
+    TASK_VARIABLES;
+    syncSliceOfSlicedBuffer(nThreads, threadIndex, ctx, TB_SLICED_LOGITS);
+}
+
+void llamaCopyFinalize(TASK_ARGS) {
+    TASK_VARIABLES;
+    if (threadIndex == 0) {
+        float* lb = (float*)transformer->buffer->getUnit(TB_SLICED_LOGITS);
+        memcpy(transformer->logits, lb, transformer->buffer->getUnitBytes(TB_SLICED_LOGITS));
+    }
 }
 
 TransformerArch buildLlamaArch(TransformerSpec* spec) {
@@ -274,6 +288,8 @@ TransformerArch buildLlamaArch(TransformerSpec* spec) {
     a.I(TASK_WITH_NAME(llamaRmsFinal), TASK_TYPE_INFERENCE);
     a.I(TASK_WITH_NAME(llamaRmsFinalNorm), TASK_TYPE_INFERENCE);
     a.I(TASK_WITH_NAME(llamaFinalize), TASK_TYPE_INFERENCE);
+    a.I(TASK_WITH_NAME(llamaSyncFinalize), TASK_TYPE_TRANSFER);
+    a.I(TASK_WITH_NAME(llamaCopyFinalize), TASK_TYPE_INFERENCE);
 
     // worker
 
@@ -294,5 +310,7 @@ TransformerArch buildLlamaArch(TransformerSpec* spec) {
         a.W(TASK_WITH_NAME(llamaSyncFfn2), TASK_TYPE_TRANSFER);
         a.W(TASK_WITH_NAME(llamaNextBlock), TASK_TYPE_INFERENCE);
     }
+    a.W(TASK_WITH_NAME(llamaFinalize), TASK_TYPE_INFERENCE);
+    a.W(TASK_WITH_NAME(llamaSyncFinalize), TASK_TYPE_TRANSFER);
     return a;
 }

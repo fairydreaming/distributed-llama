@@ -165,6 +165,9 @@ TransformerBuffer::TransformerBuffer(TransformerSpec* spec) {
     bufferBytes[TB_SLICED_HB] = nHb * sizeof(float);
     bufferBytes[TB_SLICED_HB_QUANTIZED] = getBatchBytes(spec->bufferFloatType, nHb, 1);
 
+    bufferBytes[TB_SLICED_LOGITS] = spec->vocabSize * sizeof(float);
+    buffers[TB_SLICED_LOGITS] = newBuffer(bufferBytes[TB_SLICED_LOGITS]);
+
     if (spec->nActiveExperts > 0) {
         bufferBytes[TB_UNIT_MOE_INDEXES] = spec->nActiveExperts * sizeof(uint8_t);
         bufferBytes[TB_UNIT_MOE_WEIGHTS] = spec->nActiveExperts * sizeof(float);
@@ -192,6 +195,8 @@ TransformerBuffer::~TransformerBuffer() {
         freeBuffer(buffers[TB_UNIT_MOE_INDEXES]);
         freeBuffer(buffers[TB_UNIT_MOE_WEIGHTS]);
     }
+
+    freeBuffer(buffers[TB_SLICED_LOGITS]);
 
     for (int i = 0; i < TB_LENGTH - TB_NO_PAIRS; i += 2) {
         if (bufferBytes[i] > 0) {
@@ -240,11 +245,13 @@ Transformer::Transformer(TransformerSpec* spec, TransformerConfig* config, slice
         tokenEmbeddingTable = (float*)newBuffer(tokenEmbeddingTableBytes);
         rmsFinal = (float*)newBuffer(rmsFinalBytes);
 #endif
-        wclsMm = new MatmulCommand(spec->dim, spec->vocabSize, F32, spec->weightsFloatType);
-
-        x = (float*)newBuffer(spec->dim * sizeof(float));
         logits = (float*)newBuffer(spec->vocabSize * sizeof(float));
     }
+
+    x = (float*)newBuffer(spec->dim * sizeof(float));
+
+    wclsSlice = new RowMatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->vocabSize);
+    wclsMm = new MatmulCommand(wclsSlice->n, wclsSlice->d0, F32, spec->weightsFloatType);
 
     ropeSlice = new RopeSlice(spec->dim, spec->kvDim, spec->nKvHeads, spec->nSlices, spec->seqLen, spec->headSize, spec->ropeTheta, sliceIndex);
     if (spec->ropeType == ROPE_FALCON) {
@@ -277,11 +284,12 @@ Transformer::~Transformer() {
         freeBuffer(tokenEmbeddingTable);
         freeBuffer(rmsFinal);
 #endif
-        delete wclsMm;
-
-        freeBuffer(x);
         freeBuffer(logits);
     }
+    freeBuffer(x);
+
+    delete wclsSlice;
+    delete wclsMm;
 
     delete ropeSlice;
     delete rope;
@@ -526,7 +534,7 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, Transformer
     }
 
     w += loadRootWeights((char**)&transformer.rmsFinal, w, transformer.rmsFinalBytes);
-    w += transformer.wclsMm->loadWeights(w);
+    w += loadSlicedMatmulWeights(spec->nSlices, transformer.wclsSlice, w, transformer.wclsMm, socketPool);
 
     long missedBytes = (long)(w - data) - spec->fileSize + spec->headerSize;
     if (missedBytes != 0) {
@@ -565,6 +573,7 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, TransformerConfig* con
             if (block->w30Slice->sliceBytes > bufferSize) bufferSize = block->w30Slice->sliceBytes;
         }
     }
+    if (transformer.wclsSlice->sliceBytes > bufferSize) bufferSize = transformer.wclsSlice->sliceBytes;
 
     char* buffer = new char[bufferSize];
 
@@ -610,6 +619,10 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, TransformerConfig* con
         float kbs = blockBytes / (float)(timeMs() - t0);
         printf("⏩ Received %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
+
+    socket->read(buffer, transformer.wclsSlice->sliceBytes);
+    transformer.wclsMm->loadWeights(buffer);
+    printf("⏩ Received %ld kB for output weights\n", transformer.wclsSlice->sliceBytes / 1024);
 
     delete[] buffer;
     return transformer;
